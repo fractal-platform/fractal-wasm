@@ -3,6 +3,7 @@ file(GLOB HEADERS "include/*.hpp")
 
 add_library( wasmlib SHARED wasmlib.cpp
         name.cpp
+        types.cpp
 
         wasm_interface.cpp
         wasm_gas_table.cpp
