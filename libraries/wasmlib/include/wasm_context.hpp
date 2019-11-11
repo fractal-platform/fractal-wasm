@@ -55,6 +55,7 @@ namespace ftl {
         c_call_action *cb_call_action;
         c_call_result *cb_call_result;
         c_set_result *cb_set_result;
+        c_sha256 *cb_sha256;
     } Callbacks;
 
     class wasm_context {

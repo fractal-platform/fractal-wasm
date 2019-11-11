@@ -3,6 +3,9 @@
 #include "exceptions.hpp"
 
 namespace ftl {
+
+    c_sha256 *g_sha256;
+
     void wasm_context::exec() {
         try {
             get_wasm_interface().apply(act.code_id, act.code, *this);
