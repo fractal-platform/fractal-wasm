@@ -1018,6 +1018,337 @@ namespace ftl {
         wasm_context &context;
     };
 
+    class compiler_builtins {
+    public:
+        compiler_builtins(wasm_context &ctx) : context(ctx) {}
+
+        void __ashlti3(__int128 &ret, uint64_t low, uint64_t high, uint32_t shift) {
+            context.use_gas(GAS_CALL_BASE);
+            unsigned __int128 i = (static_cast<unsigned __int128>(high) >> 64) | low;
+            i <<= shift;
+            ret = (unsigned __int128) i;
+        }
+
+        void __ashrti3(__int128 &ret, uint64_t low, uint64_t high, uint32_t shift) {
+            context.use_gas(GAS_CALL_BASE);
+            // retain the signedness
+            ret = high;
+            ret <<= 64;
+            ret |= low;
+            ret >>= shift;
+        }
+
+        void __lshlti3(__int128 &ret, uint64_t low, uint64_t high, uint32_t shift) {
+            context.use_gas(GAS_CALL_BASE);
+            unsigned __int128 i = (static_cast<unsigned __int128>(high) >> 64) | low;
+            i <<= shift;
+            ret = (unsigned __int128) i;
+        }
+
+        void __lshrti3(__int128 &ret, uint64_t low, uint64_t high, uint32_t shift) {
+            context.use_gas(GAS_CALL_BASE);
+            unsigned __int128 i = (static_cast<unsigned __int128>(high) >> 64) | low;
+            i >>= shift;
+            ret = (unsigned __int128) i;
+        }
+
+        void __divti3(__int128 &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            __int128 lhs = ha;
+            __int128 rhs = hb;
+
+            lhs <<= 64;
+            lhs |= la;
+
+            rhs <<= 64;
+            rhs |= lb;
+
+            FTL_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
+
+            lhs /= rhs;
+
+            ret = lhs;
+        }
+
+        void __udivti3(unsigned __int128 &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            unsigned __int128 lhs = ha;
+            unsigned __int128 rhs = hb;
+
+            lhs <<= 64;
+            lhs |= la;
+
+            rhs <<= 64;
+            rhs |= lb;
+
+            FTL_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
+
+            lhs /= rhs;
+            ret = lhs;
+        }
+
+        void __multi3(__int128 &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            __int128 lhs = ha;
+            __int128 rhs = hb;
+
+            lhs <<= 64;
+            lhs |= la;
+
+            rhs <<= 64;
+            rhs |= lb;
+
+            lhs *= rhs;
+            ret = lhs;
+        }
+
+        void __modti3(__int128 &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            __int128 lhs = ha;
+            __int128 rhs = hb;
+
+            lhs <<= 64;
+            lhs |= la;
+
+            rhs <<= 64;
+            rhs |= lb;
+
+            FTL_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
+
+            lhs %= rhs;
+            ret = lhs;
+        }
+
+        void __umodti3(unsigned __int128 &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            unsigned __int128 lhs = ha;
+            unsigned __int128 rhs = hb;
+
+            lhs <<= 64;
+            lhs |= la;
+
+            rhs <<= 64;
+            rhs |= lb;
+
+            FTL_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
+
+            lhs %= rhs;
+            ret = lhs;
+        }
+
+        // arithmetic long double
+        void __addtf3(float128_t &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t a = {{la, ha}};
+            float128_t b = {{lb, hb}};
+            ret = f128_add(a, b);
+        }
+
+        void __subtf3(float128_t &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t a = {{la, ha}};
+            float128_t b = {{lb, hb}};
+            ret = f128_sub(a, b);
+        }
+
+        void __multf3(float128_t &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t a = {{la, ha}};
+            float128_t b = {{lb, hb}};
+            ret = f128_mul(a, b);
+        }
+
+        void __divtf3(float128_t &ret, uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t a = {{la, ha}};
+            float128_t b = {{lb, hb}};
+            ret = f128_div(a, b);
+        }
+
+        void __negtf2(float128_t &ret, uint64_t la, uint64_t ha) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = {{la, (ha ^ (uint64_t) 1 << 63)}};
+        }
+
+        // conversion long double
+        void __extendsftf2(float128_t &ret, float f) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = f32_to_f128(to_softfloat32(f));
+        }
+
+        void __extenddftf2(float128_t &ret, double d) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = f64_to_f128(to_softfloat64(d));
+        }
+
+        double __trunctfdf2(uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t f = {{l, h}};
+            return from_softfloat64(f128_to_f64(f));
+        }
+
+        float __trunctfsf2(uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t f = {{l, h}};
+            return from_softfloat32(f128_to_f32(f));
+        }
+
+        int32_t __fixtfsi(uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t f = {{l, h}};
+            return f128_to_i32(f, 0, false);
+        }
+
+        int64_t __fixtfdi(uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t f = {{l, h}};
+            return f128_to_i64(f, 0, false);
+        }
+
+        void __fixtfti(__int128 &ret, uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t f = {{l, h}};
+            ret = ___fixtfti(f);
+        }
+
+        uint32_t __fixunstfsi(uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t f = {{l, h}};
+            return f128_to_ui32(f, 0, false);
+        }
+
+        uint64_t __fixunstfdi(uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t f = {{l, h}};
+            return f128_to_ui64(f, 0, false);
+        }
+
+        void __fixunstfti(unsigned __int128 &ret, uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t f = {{l, h}};
+            ret = ___fixunstfti(f);
+        }
+
+        void __fixsfti(__int128 &ret, float a) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = ___fixsfti(to_softfloat32(a).v);
+        }
+
+        void __fixdfti(__int128 &ret, double a) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = ___fixdfti(to_softfloat64(a).v);
+        }
+
+        void __fixunssfti(unsigned __int128 &ret, float a) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = ___fixunssfti(to_softfloat32(a).v);
+        }
+
+        void __fixunsdfti(unsigned __int128 &ret, double a) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = ___fixunsdfti(to_softfloat64(a).v);
+        }
+
+        double __floatsidf(int32_t i) {
+            context.use_gas(GAS_CALL_BASE);
+            return from_softfloat64(i32_to_f64(i));
+        }
+
+        void __floatsitf(float128_t &ret, int32_t i) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = i32_to_f128(i);
+        }
+
+        void __floatditf(float128_t &ret, uint64_t a) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = i64_to_f128(a);
+        }
+
+        void __floatunsitf(float128_t &ret, uint32_t i) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = ui32_to_f128(i);
+        }
+
+        void __floatunditf(float128_t &ret, uint64_t a) {
+            context.use_gas(GAS_CALL_BASE);
+            ret = ui64_to_f128(a);
+        }
+
+        double __floattidf(uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            unsigned __int128 i = (static_cast<unsigned __int128>(h) >> 64) | l;
+            return ___floattidf(*(__int128 *) &i);
+        }
+
+        double __floatuntidf(uint64_t l, uint64_t h) {
+            context.use_gas(GAS_CALL_BASE);
+            unsigned __int128 i = (static_cast<unsigned __int128>(h) >> 64) | l;
+            return ___floatuntidf((unsigned __int128) i);
+        }
+
+        int ___cmptf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb, int return_value_if_nan) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t a = {{la, ha}};
+            float128_t b = {{lb, hb}};
+            if (__unordtf2(la, ha, lb, hb))
+                return return_value_if_nan;
+            if (f128_lt(a, b))
+                return -1;
+            if (f128_eq(a, b))
+                return 0;
+            return 1;
+        }
+
+        int __eqtf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            return ___cmptf2(la, ha, lb, hb, 1);
+        }
+
+        int __netf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            return ___cmptf2(la, ha, lb, hb, 1);
+        }
+
+        int __getf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            return ___cmptf2(la, ha, lb, hb, -1);
+        }
+
+        int __gttf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            return ___cmptf2(la, ha, lb, hb, 0);
+        }
+
+        int __letf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            return ___cmptf2(la, ha, lb, hb, 1);
+        }
+
+        int __lttf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            return ___cmptf2(la, ha, lb, hb, 0);
+        }
+
+        int __cmptf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            return ___cmptf2(la, ha, lb, hb, 1);
+        }
+
+        int __unordtf2(uint64_t la, uint64_t ha, uint64_t lb, uint64_t hb) {
+            context.use_gas(GAS_CALL_BASE);
+            float128_t a = {{la, ha}};
+            float128_t b = {{lb, hb}};
+            if (softfloat_api::is_nan(a) || softfloat_api::is_nan(b))
+                return 1;
+            return 0;
+        }
+
+        static constexpr uint32_t SHIFT_WIDTH = (sizeof(uint64_t) * 8) - 1;
+
+    protected:
+        wasm_context &context;
+    };
+
     REGISTER_INTRINSICS(database_api,
                         (db_store, void(int64_t, int, int, int, int))
                                 (db_load, int(int64_t, int, int, int, int))
@@ -1088,66 +1419,113 @@ namespace ftl {
                                 (memset, int(int, int, int))
     );
 
-    REGISTER_INJECTED_INTRINSICS(softfloat_api,
-                                 (_eosio_f32_add, float(float, float))
-                                         (_eosio_f32_sub, float(float, float))
-                                         (_eosio_f32_mul, float(float, float))
-                                         (_eosio_f32_div, float(float, float))
-                                         (_eosio_f32_min, float(float, float))
-                                         (_eosio_f32_max, float(float, float))
-                                         (_eosio_f32_copysign, float(float, float))
-                                         (_eosio_f32_abs, float(float))
-                                         (_eosio_f32_neg, float(float))
-                                         (_eosio_f32_sqrt, float(float))
-                                         (_eosio_f32_ceil, float(float))
-                                         (_eosio_f32_floor, float(float))
-                                         (_eosio_f32_trunc, float(float))
-                                         (_eosio_f32_nearest, float(float))
-                                         (_eosio_f32_eq, int(float, float))
-                                         (_eosio_f32_ne, int(float, float))
-                                         (_eosio_f32_lt, int(float, float))
-                                         (_eosio_f32_le, int(float, float))
-                                         (_eosio_f32_gt, int(float, float))
-                                         (_eosio_f32_ge, int(float, float))
-                                         (_eosio_f64_add, double(double, double))
-                                         (_eosio_f64_sub, double(double, double))
-                                         (_eosio_f64_mul, double(double, double))
-                                         (_eosio_f64_div, double(double, double))
-                                         (_eosio_f64_min, double(double, double))
-                                         (_eosio_f64_max, double(double, double))
-                                         (_eosio_f64_copysign, double(double, double))
-                                         (_eosio_f64_abs, double(double))
-                                         (_eosio_f64_neg, double(double))
-                                         (_eosio_f64_sqrt, double(double))
-                                         (_eosio_f64_ceil, double(double))
-                                         (_eosio_f64_floor, double(double))
-                                         (_eosio_f64_trunc, double(double))
-                                         (_eosio_f64_nearest, double(double))
-                                         (_eosio_f64_eq, int(double, double))
-                                         (_eosio_f64_ne, int(double, double))
-                                         (_eosio_f64_lt, int(double, double))
-                                         (_eosio_f64_le, int(double, double))
-                                         (_eosio_f64_gt, int(double, double))
-                                         (_eosio_f64_ge, int(double, double))
-                                         (_eosio_f32_promote, double(float))
-                                         (_eosio_f64_demote, float(double))
-                                         (_eosio_f32_trunc_i32s, int(float))
-                                         (_eosio_f64_trunc_i32s, int(double))
-                                         (_eosio_f32_trunc_i32u, int(float))
-                                         (_eosio_f64_trunc_i32u, int(double))
-                                         (_eosio_f32_trunc_i64s, int64_t(float))
-                                         (_eosio_f64_trunc_i64s, int64_t(double))
-                                         (_eosio_f32_trunc_i64u, int64_t(float))
-                                         (_eosio_f64_trunc_i64u, int64_t(double))
-                                         (_eosio_i32_to_f32, float(int32_t))
-                                         (_eosio_i64_to_f32, float(int64_t))
-                                         (_eosio_ui32_to_f32, float(int32_t))
-                                         (_eosio_ui64_to_f32, float(int64_t))
-                                         (_eosio_i32_to_f64, double(int32_t))
-                                         (_eosio_i64_to_f64, double(int64_t))
-                                         (_eosio_ui32_to_f64, double(int32_t))
-                                         (_eosio_ui64_to_f64, double(int64_t))
+    REGISTER_INTRINSICS(compiler_builtins,
+                        (__ashlti3, void(int, int64_t, int64_t, int))
+                        (__ashrti3, void(int, int64_t, int64_t, int))
+                        (__lshlti3, void(int, int64_t, int64_t, int))
+                        (__lshrti3, void(int, int64_t, int64_t, int))
+                        (__divti3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__udivti3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__modti3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__umodti3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__multi3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__addtf3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__subtf3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__multf3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__divtf3, void(int, int64_t, int64_t, int64_t, int64_t))
+                        (__eqtf2, int(int64_t, int64_t, int64_t, int64_t))
+                        (__netf2, int(int64_t, int64_t, int64_t, int64_t))
+                        (__getf2, int(int64_t, int64_t, int64_t, int64_t))
+                        (__gttf2, int(int64_t, int64_t, int64_t, int64_t))
+                        (__lttf2, int(int64_t, int64_t, int64_t, int64_t))
+                        (__letf2, int(int64_t, int64_t, int64_t, int64_t))
+                        (__cmptf2, int(int64_t, int64_t, int64_t, int64_t))
+                        (__unordtf2, int(int64_t, int64_t, int64_t, int64_t))
+                        (__negtf2, void(int, int64_t, int64_t))
+                        (__floatsitf, void(int, int))
+                        (__floatunsitf, void(int, int))
+                        (__floatditf, void(int, int64_t))
+                        (__floatunditf, void(int, int64_t))
+                        (__floattidf, double(int64_t, int64_t))
+                        (__floatuntidf, double(int64_t, int64_t))
+                        (__floatsidf, double(int))
+                        (__extendsftf2, void(int, float))
+                        (__extenddftf2, void(int, double))
+                        (__fixtfti, void(int, int64_t, int64_t))
+                        (__fixtfdi, int64_t(int64_t, int64_t))
+                        (__fixtfsi, int(int64_t, int64_t))
+                        (__fixunstfti, void(int, int64_t, int64_t))
+                        (__fixunstfdi, int64_t(int64_t, int64_t))
+                        (__fixunstfsi, int(int64_t, int64_t))
+                        (__fixsfti, void(int, float))
+                        (__fixdfti, void(int, double))
+                        (__fixunssfti, void(int, float))
+                        (__fixunsdfti, void(int, double))
+                        (__trunctfdf2, double(int64_t, int64_t))
+                        (__trunctfsf2, float(int64_t, int64_t))
     );
+
+    REGISTER_INJECTED_INTRINSICS(softfloat_api,
+                                        (_eosio_f32_add, float(float, float))
+                                        (_eosio_f32_sub, float(float, float))
+                                        (_eosio_f32_mul, float(float, float))
+                                        (_eosio_f32_div, float(float, float))
+                                        (_eosio_f32_min, float(float, float))
+                                        (_eosio_f32_max, float(float, float))
+                                        (_eosio_f32_copysign, float(float, float))
+                                        (_eosio_f32_abs, float(float))
+                                        (_eosio_f32_neg, float(float))
+                                        (_eosio_f32_sqrt, float(float))
+                                        (_eosio_f32_ceil, float(float))
+                                        (_eosio_f32_floor, float(float))
+                                        (_eosio_f32_trunc, float(float))
+                                        (_eosio_f32_nearest, float(float))
+                                        (_eosio_f32_eq, int(float, float))
+                                        (_eosio_f32_ne, int(float, float))
+                                        (_eosio_f32_lt, int(float, float))
+                                        (_eosio_f32_le, int(float, float))
+                                        (_eosio_f32_gt, int(float, float))
+                                        (_eosio_f32_ge, int(float, float))
+                                        (_eosio_f64_add, double(double, double))
+                                        (_eosio_f64_sub, double(double, double))
+                                        (_eosio_f64_mul, double(double, double))
+                                        (_eosio_f64_div, double(double, double))
+                                        (_eosio_f64_min, double(double, double))
+                                        (_eosio_f64_max, double(double, double))
+                                        (_eosio_f64_copysign, double(double, double))
+                                        (_eosio_f64_abs, double(double))
+                                        (_eosio_f64_neg, double(double))
+                                        (_eosio_f64_sqrt, double(double))
+                                        (_eosio_f64_ceil, double(double))
+                                        (_eosio_f64_floor, double(double))
+                                        (_eosio_f64_trunc, double(double))
+                                        (_eosio_f64_nearest, double(double))
+                                        (_eosio_f64_eq, int(double, double))
+                                        (_eosio_f64_ne, int(double, double))
+                                        (_eosio_f64_lt, int(double, double))
+                                        (_eosio_f64_le, int(double, double))
+                                        (_eosio_f64_gt, int(double, double))
+                                        (_eosio_f64_ge, int(double, double))
+                                        (_eosio_f32_promote, double(float))
+                                        (_eosio_f64_demote, float(double))
+                                        (_eosio_f32_trunc_i32s, int(float))
+                                        (_eosio_f64_trunc_i32s, int(double))
+                                        (_eosio_f32_trunc_i32u, int(float))
+                                        (_eosio_f64_trunc_i32u, int(double))
+                                        (_eosio_f32_trunc_i64s, int64_t(float))
+                                        (_eosio_f64_trunc_i64s, int64_t(double))
+                                        (_eosio_f32_trunc_i64u, int64_t(float))
+                                        (_eosio_f64_trunc_i64u, int64_t(double))
+                                        (_eosio_i32_to_f32, float(int32_t))
+                                        (_eosio_i64_to_f32, float(int64_t))
+                                        (_eosio_ui32_to_f32, float(int32_t))
+                                        (_eosio_ui64_to_f32, float(int64_t))
+                                        (_eosio_i32_to_f64, double(int32_t))
+                                        (_eosio_i64_to_f64, double(int64_t))
+                                        (_eosio_ui32_to_f64, double(int32_t))
+                                        (_eosio_ui64_to_f64, double(int64_t))
+    );
+
 
 }
 
